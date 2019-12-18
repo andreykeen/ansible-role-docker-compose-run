@@ -24,4 +24,51 @@
   become: no
 
 - include_tasks: individual-service.yml
-  when: stat_individual_service_result.stat.exists
+  when: docker_compose_run_local_individual_services_dir != "" and stat_individual_service_result.stat.exists
+
+
+- name: Get list files for service '{{ service }}'
+  find:
+    path: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
+    recurse: yes
+  register: find_list_files
+
+- name: Replace variable %%inventory_hostname%%
+  replace:
+    path: "{{ item.path }}"
+    regexp: '%%inventory_hostname%%'
+    replace: "{{ inventory_hostname }}"
+  loop: "{{ find_list_files.files }}"
+
+- name: Replace variable %%ansible_host%%
+  replace:
+    path: "{{ item.path }}"
+    regexp: '%%ansible_host%%'
+    replace: "{{ ansible_host }}"
+  loop: "{{ find_list_files.files }}"
+
+
+# - name: Only pull all necessary images
+#   shell: |
+#     cd "{{ thor_x_deploy_remote_docker_compose_dir }}"
+#     docker-compose pull
+
+- name: Run service '{{ service }}'
+  docker_compose:
+    project_src: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
+    state: present
+
+# - name: Prune all stopped containers
+#   shell: docker container prune -f
+
+# - name: Check docker-compose status
+#   shell: |
+#     cd "{{ thor_x_deploy_remote_docker_compose_dir }}"
+#     docker-compose top
+#   register: return_docker_compose_ps
+
+# - name: Prune unusage images
+#   shell: docker image prune -af
+#   when:
+#     - return_docker_compose_ps.stdout_lines
+#     - thor_x_deploy_prune_images == true
