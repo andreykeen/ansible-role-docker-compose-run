@@ -1,0 +1,10 @@
+---
+# defaults file for docker-compose-run
+
+docker_compose_run_services_list: ""
+
+docker_compose_run_local_common_services_dir: "."
+docker_compose_run_local_individual_services_dir: "."
+docker_compose_run_remote_services_dir: "/opt/services2"
+
+docker_compose_run_only_pull_images: false

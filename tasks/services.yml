@@ -1,0 +1,27 @@
+---
+
+- name: "Checking if common configuration for '{{ service }}' exist"
+  stat:
+    path: "{{ docker_compose_run_local_common_services_dir }}/{{ service }}"
+  register: stat_common_service_result
+  delegate_to: 127.0.0.1
+  become: no
+
+- name: "Copy common configuration for '{{ service }}' service"
+  copy:
+    src: "{{ docker_compose_run_local_common_services_dir }}/{{ service }}"
+    dest: "{{ docker_compose_run_remote_services_dir }}/"
+    owner: "root"
+    mode: "preserve"
+  when: stat_common_service_result.stat.exists
+
+
+- name: "Checking if individual configuration for '{{ service }}' exist"
+  stat:
+    path: "{{ docker_compose_run_local_individual_services_dir }}/{{ inventory_hostname }}/{{ service }}"
+  register: stat_individual_service_result
+  delegate_to: 127.0.0.1
+  become: no
+
+- include_tasks: individual-service.yml
+  when: stat_individual_service_result.stat.exists
