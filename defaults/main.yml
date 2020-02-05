@@ -9,5 +9,9 @@ docker_compose_run_remote_services_dir: "/opt/services"
 
 docker_compose_run_only_pull_images: false
 
-# TODO: up, pull, down
-docker_compose_run_action: "up"
+
+# docker_compose_restarted: no|yes
+docker_compose_restarted: no
+
+# docker_compose_state: present|absent
+docker_compose_state: present

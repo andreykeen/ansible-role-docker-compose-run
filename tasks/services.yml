@@ -56,7 +56,8 @@
 - name: Run service '{{ service }}'
   docker_compose:
     project_src: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
-    state: present
+    state: "{{ docker_compose_state }}"
+    restarted: "{{ docker_compose_restarted }}"
 
 # - name: Prune all stopped containers
 #   shell: docker container prune -f
