@@ -7,11 +7,15 @@ docker_compose_run_local_common_services_dir: "."
 docker_compose_run_local_individual_services_dir: ""
 docker_compose_run_remote_services_dir: "/opt/services"
 
-docker_compose_run_only_pull_images: false
 
+# docker_compose_run_only_pull_images: true|false
+docker_compose_run_only_pull_images: false
 
 # docker_compose_restarted: no|yes
 docker_compose_restarted: no
 
 # docker_compose_state: present|absent
 docker_compose_state: present
+
+# docker_compose_service_scale
+docker_compose_service_scale: {}
