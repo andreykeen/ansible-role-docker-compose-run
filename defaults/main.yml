@@ -19,3 +19,10 @@ docker_compose_state: present
 
 # docker_compose_service_scale
 docker_compose_service_scale: {}
+
+
+docker_compose_run_registry_hostname: ""
+docker_compose_run_registry_username: ""
+docker_compose_run_registry_password: ""
+docker_compose_run_registry_login_befor: no
+docker_compose_run_registry_logout_after: no
