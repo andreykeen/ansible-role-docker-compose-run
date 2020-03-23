@@ -1,13 +1,13 @@
 ---
 
-- name: "Checking if common configuration for '{{ service }}' exist"
+- name: "Checking if configuration for '{{ service }}' exist"
   stat:
     path: "{{ docker_compose_run_local_common_services_dir }}/{{ service }}"
   register: stat_common_service_result
   delegate_to: 127.0.0.1
   become: no
 
-- name: "Copy common configuration for '{{ service }}' service"
+- name: "Copy configuration for '{{ service }}' service"
   copy:
     src: "{{ docker_compose_run_local_common_services_dir }}/{{ service }}"
     dest: "{{ docker_compose_run_remote_services_dir }}/"
@@ -16,39 +16,21 @@
   when: stat_common_service_result.stat.exists
 
 
-- name: "Checking if individual configuration for '{{ service }}' exist"
-  stat:
-    path: "{{ docker_compose_run_local_individual_services_dir }}/{{ inventory_hostname }}/{{ service }}"
-  register: stat_individual_service_result
-  delegate_to: 127.0.0.1
-  become: no
-
-- include_tasks: individual-service.yml
-  when: docker_compose_run_local_individual_services_dir != "" and stat_individual_service_result.stat.exists
-
-
 - name: Get list files for service '{{ service }}'
   find:
     path: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
     recurse: yes
   register: find_list_files
+  when: (docker_compose_run_rewrite_list is defined) and (docker_compose_run_rewrite_list|length > 0)
 
-- name: Replace variable %%inventory_hostname%%
-  replace:
-    path: "{{ item.path }}"
-    regexp: '%%inventory_hostname%%'
-    replace: "{{ inventory_hostname }}"
+- include_tasks: replace-variables.yml
   loop: "{{ find_list_files.files }}"
-
-- name: Replace variable %%ansible_host%%
-  replace:
-    path: "{{ item.path }}"
-    regexp: '%%ansible_host%%'
-    replace: "{{ ansible_host }}"
-  loop: "{{ find_list_files.files }}"
+  loop_control:
+    loop_var: item_file
+  when: (docker_compose_run_rewrite_list is defined) and (docker_compose_run_rewrite_list|length > 0)
 
 
-- name: Only pull all necessary images for {{ service }}
+- name: Only pull images for {{ service }}
   shell: |
     cd "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
     docker-compose pull

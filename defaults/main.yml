@@ -4,7 +4,6 @@
 docker_compose_run_services_list: ""
 
 docker_compose_run_local_common_services_dir: "."
-docker_compose_run_local_individual_services_dir: ""
 docker_compose_run_remote_services_dir: "/opt/services"
 
 
@@ -26,3 +25,14 @@ docker_compose_run_registry_username: ""
 docker_compose_run_registry_password: ""
 docker_compose_run_registry_login_befor: no
 docker_compose_run_registry_logout_after: no
+
+
+docker_compose_run_rewrite_list: []
+# docker_compose_run_rewrite_list:
+#   - rewrite:
+#       regexp: '__inventory_hostname__'
+#       replace: "{{ inventory_hostname }}"
+#   - rewrite:
+#       regexp: '__ansible_host__'
+#       replace: "{{ ansible_host }}"
+
