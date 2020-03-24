@@ -23,7 +23,8 @@
   register: find_list_files
   when: (docker_compose_run_rewrite_list is defined) and (docker_compose_run_rewrite_list|length > 0)
 
-- include_tasks: replace-variables.yml
+- name: Include replace-variables.yml
+  include_tasks: replace-variables.yml
   loop: "{{ find_list_files.files }}"
   loop_control:
     loop_var: item_file
