@@ -3,7 +3,11 @@
 
 docker_compose_run_services_list: ""
 
+# Variable 'docker_compose_run_local_common_services_dir' is depricated.
+# Use variable 'docker_compose_run_local_services_dir'
 docker_compose_run_local_common_services_dir: "."
+docker_compose_run_local_services_dir: "{{ docker_compose_run_local_common_services_dir }}"
+
 docker_compose_run_remote_services_dir: "/opt/services"
 
 
@@ -19,6 +23,8 @@ docker_compose_state: present
 # docker_compose_service_scale
 docker_compose_service_scale: {}
 
+# docker_compose_pull: no|yes
+docker_compose_pull: no
 
 docker_compose_run_registry_hostname: ""
 docker_compose_run_registry_username: ""
