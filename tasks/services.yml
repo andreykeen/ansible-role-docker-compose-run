@@ -7,71 +7,63 @@
   delegate_to: 127.0.0.1
   become: no
 
-# - name: "Copy configuration for '{{ service }}' service"
-#   copy:
-#     src: "{{ docker_compose_run_local_services_dir }}/{{ service }}"
-#     dest: "{{ docker_compose_run_remote_services_dir }}/"
-#     owner: "root"
-#     mode: "preserve"
-#   when: stat_common_service_result.stat.exists
+- name: Exit if service not found
+  fail:
+    msg: Servise does not exits
+  when: stat_common_service_result.stat.exists == false
 
-- name: Get list files for service '{{ service }}'
+# Список директорий используется для создания таких же директорий на целевом хосте
+- name: Get directory list for service '{{ service }}'
   find:
     path: "{{ docker_compose_run_local_services_dir }}/{{ service }}"
+    file_type: directory
+    hidden: yes
+    recurse: yes
+  register: find_list_local_dirs
+  delegate_to: 127.0.0.1
+  become: no
+
+# Список файлов используется для копирования на целевой хост с помощью модуля template
+- name: Get files list for service '{{ service }}'
+  find:
+    path: "{{ docker_compose_run_local_services_dir }}/{{ service }}"
+    file_type: file
+    hidden: yes
     recurse: yes
   register: find_list_local_files
   delegate_to: 127.0.0.1
   become: no
 
-- name: print debug
-  debug:
-    msg: "{{ docker_compose_run_local_services_dir }}"
-
 # Если переменная 'docker_compose_run_local_services_dir' задана с начальными './', то удаляем их.
 - set_fact:
-    local_services_dir_trimmed: "{{ docker_compose_run_local_services_dir | replace('./', '') }}"
+    local_services_dir_trimmed: "{{ docker_compose_run_local_services_dir | regex_replace('^./', '') }}"
 
-- name: print debug
-  debug:
-    msg: "{{ item.path | replace( local_services_dir_trimmed , '') | replace('/' + service + '/', '') }}"
-  loop: "{{ find_list_local_files.files }}"
+- name: Create directories for service '{{ service }}'
+  file:
+    path: "{{ docker_compose_run_remote_services_dir }}/{{ item.path | replace( local_services_dir_trimmed + '/' , '') }}"
+    state: directory
+  loop: "{{ find_list_local_dirs.files }}"
 
-- name: "Copy template j2 configuration for '{{ service }}' service"
+- name: "Copy template Jinja2 configuration for '{{ service }}' service"
   template:
     src: "{{ item.path }}"
-    dest: "{{ docker_compose_run_remote_services_dir }}/{{ service }}/{{ item.path | replace( local_services_dir_trimmed , '') | replace('/' + service + '/', '') }}"
+    dest: "{{ docker_compose_run_remote_services_dir }}/{{ item.path | replace( local_services_dir_trimmed + '/', '') }}"
     owner: "root"
     mode: "preserve"
-  when: stat_common_service_result.stat.exists
   loop: "{{ find_list_local_files.files }}"
 
 
-# - name: Get list files for service '{{ service }}'
-#   find:
-#     path: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
-#     recurse: yes
-#   register: find_list_files
-#   when: (docker_compose_run_rewrite_list is defined) and (docker_compose_run_rewrite_list|length > 0)
+- name: Only pull images for {{ service }}
+  shell: |
+    cd "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
+    docker-compose pull
+  when: docker_compose_run_only_pull_images|bool == true
 
-# - name: Include replace-variables.yml
-#   include_tasks: replace-variables.yml
-#   loop: "{{ find_list_files.files }}"
-#   loop_control:
-#     loop_var: item_file
-#   when: (docker_compose_run_rewrite_list is defined) and (docker_compose_run_rewrite_list|length > 0)
-
-
-# - name: Only pull images for {{ service }}
-#   shell: |
-#     cd "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
-#     docker-compose pull
-#   when: docker_compose_run_only_pull_images|bool == true
-
-# - name: Run service '{{ service }}'
-#   docker_compose:
-#     project_src: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
-#     state: "{{ docker_compose_state }}"
-#     restarted: "{{ docker_compose_restarted }}"
-#     scale: "{{ docker_compose_service_scale }}"
-#     pull: "{{ docker_compose_pull }}"
-#   when: docker_compose_run_only_pull_images|bool != true
+- name: Run service '{{ service }}'
+  docker_compose:
+    project_src: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
+    state: "{{ docker_compose_state }}"
+    restarted: "{{ docker_compose_restarted }}"
+    scale: "{{ docker_compose_service_scale }}"
+    pull: "{{ docker_compose_pull }}"
+  when: docker_compose_run_only_pull_images|bool != true
