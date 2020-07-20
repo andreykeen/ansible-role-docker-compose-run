@@ -1,9 +1,10 @@
 ---
 
-- name: Wait {{ docker_compose_run_timeout_befor }} seconds befor continue
+- name: Wait {{ docker_compose_run_timeout_befor.seconds }} seconds before continue
   pause:
-    seconds: "{{ docker_compose_run_timeout_befor }}"
-  when: docker_compose_run_timeout_befor > 0
+    seconds: "{{ docker_compose_run_timeout_befor.seconds }}"
+    prompt: "{{ docker_compose_run_timeout_befor.message }}"
+  when: docker_compose_run_timeout_befor.seconds > 0
 
 - name: "Create main directory for all docker-compose services"
   file:
@@ -30,3 +31,9 @@
     username: "{{ docker_compose_run_registry_username }}"
     state: absent
   when: (docker_compose_run_registry_hostname != "") and (docker_compose_run_registry_username != "") and (docker_compose_run_registry_logout_after)
+
+- name: Wait {{ docker_compose_run_timeout_after.seconds }} seconds before release
+  pause:
+    seconds: "{{ docker_compose_run_timeout_after.seconds }}"
+    prompt: "{{ docker_compose_run_timeout_after.message }}"
+  when: docker_compose_run_timeout_after.seconds > 0
