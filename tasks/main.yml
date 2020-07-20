@@ -16,11 +16,6 @@
     reauthorize: yes
   when: (docker_compose_run_registry_username != "") and (docker_compose_run_registry_password != "") and (docker_compose_run_registry_login_befor)
 
-# # Проверяем существует ли директория с сервисов
-# - name: Checking service directory
-#   stat:
-#     path: "{{ docker_compose_run_local_services_dir }}/{{ item }}"
-#   loop: "{{ docker_compose_run_services_list }}"
 
 - include_tasks: services.yml
   loop: "{{ docker_compose_run_services_list }}"

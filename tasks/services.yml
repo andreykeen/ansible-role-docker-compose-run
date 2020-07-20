@@ -9,7 +9,7 @@
 
 - name: Exit if service not found
   fail:
-    msg: Servise does not exits
+    msg: Service does not exist
   when: stat_common_service_result.stat.exists == false
 
 # Список директорий используется для создания таких же директорий на целевом хосте
@@ -23,6 +23,11 @@
   delegate_to: 127.0.0.1
   become: no
 
+# - name: Print 'find_list_local_dirs'
+#   debug:
+#     var: find_list_local_dirs.files
+
+
 # Список файлов используется для копирования на целевой хост с помощью модуля template
 - name: Get files list for service '{{ service }}'
   find:
@@ -34,11 +39,22 @@
   delegate_to: 127.0.0.1
   become: no
 
+# - name: Print 'find_list_local_files'
+#   debug:
+#     var: find_list_local_files.files
+
+
 # Если переменная 'docker_compose_run_local_services_dir' задана с начальными './', то удаляем их.
 - set_fact:
     local_services_dir_trimmed: "{{ docker_compose_run_local_services_dir | regex_replace('^./', '') }}"
 
+
 - name: Create directories for service '{{ service }}'
+  file:
+    path: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
+    state: directory
+
+- name: Create sub-directories for service '{{ service }} if needded'
   file:
     path: "{{ docker_compose_run_remote_services_dir }}/{{ item.path | replace( local_services_dir_trimmed + '/' , '') }}"
     state: directory
