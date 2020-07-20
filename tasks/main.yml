@@ -1,12 +1,15 @@
 ---
 
+- name: Wait {{ docker_compose_run_timeout_befor }} seconds befor continue
+  pause:
+    seconds: "{{ docker_compose_run_timeout_befor }}"
+  when: docker_compose_run_timeout_befor > 0
 
 - name: "Create main directory for all docker-compose services"
   file:
     path: "{{ docker_compose_run_remote_services_dir }}"
     state: directory
     owner: "root"
-
 
 - name: Login to private {{ docker_compose_run_registry_hostname }} registry
   docker_login:
@@ -16,12 +19,10 @@
     reauthorize: yes
   when: (docker_compose_run_registry_username != "") and (docker_compose_run_registry_password != "") and (docker_compose_run_registry_login_befor)
 
-
 - include_tasks: services.yml
   loop: "{{ docker_compose_run_services_list }}"
   loop_control:
     loop_var: service
-
 
 - name: Logout from private {{ docker_compose_run_registry_hostname }} registry
   docker_login:

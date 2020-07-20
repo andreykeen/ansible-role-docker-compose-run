@@ -33,6 +33,7 @@ docker_compose_run_registry_login_befor: no
 docker_compose_run_registry_logout_after: no
 
 
+# Depricated
 docker_compose_run_rewrite_list: []
 # docker_compose_run_rewrite_list:
 #   - rewrite:
@@ -42,3 +43,6 @@ docker_compose_run_rewrite_list: []
 #       regexp: '__ansible_host__'
 #       replace: "{{ ansible_host }}"
 
+
+# Пауза в секундах перед выполнением роли
+docker_compose_run_timeout_befor: 0
