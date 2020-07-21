@@ -45,7 +45,7 @@ docker_compose_run_rewrite_list: []
 
 
 # Пауза в секундах перед выполнением роли
-docker_compose_run_timeout_befor: 0
+docker_compose_run_timeout_befor:
   seconds: 0
   message: "Wait a few seconds"
 
