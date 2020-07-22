@@ -20,10 +20,12 @@
     reauthorize: yes
   when: (docker_compose_run_registry_username != "") and (docker_compose_run_registry_password != "") and (docker_compose_run_registry_login_befor)
 
+
 - include_tasks: services.yml
   loop: "{{ docker_compose_run_services_list }}"
   loop_control:
     loop_var: service
+
 
 - name: Logout from private {{ docker_compose_run_registry_hostname }} registry
   docker_login:

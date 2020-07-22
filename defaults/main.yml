@@ -10,6 +10,16 @@ docker_compose_run_local_services_dir: "{{ docker_compose_run_local_common_servi
 
 docker_compose_run_remote_services_dir: "/opt/services"
 
+# Что с сервисом должна сделать эта роль:
+# present *
+# present-and-wait-until-end *
+# absent *
+# absent-and-delete *
+# copy
+# pull
+# run-once
+docker_compose_run_action: present
+
 
 # docker_compose_run_only_pull_images: true|false
 docker_compose_run_only_pull_images: false
