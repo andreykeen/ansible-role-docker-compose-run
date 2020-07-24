@@ -1,5 +1,12 @@
 ---
 
+- name: Wait {{ docker_compose_run_timeout_befor.seconds }} seconds before continue
+  pause:
+    seconds: "{{ docker_compose_run_timeout_befor.seconds }}"
+    prompt: "{{ docker_compose_run_timeout_befor.message }}"
+  when: docker_compose_run_timeout_befor.seconds > 0
+
+
 - name: "Checking if configuration for '{{ service }}' exist"
   stat:
     path: "{{ docker_compose_run_local_services_dir }}/{{ service }}"
@@ -54,7 +61,7 @@
     path: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
     state: directory
 
-- name: Create sub-directories for service '{{ service }} if needded'
+- name: Create sub-directories for service '{{ service }}' if needded
   file:
     path: "{{ docker_compose_run_remote_services_dir }}/{{ item.path | replace( local_services_dir_trimmed + '/' , '') }}"
     state: directory
@@ -69,13 +76,14 @@
     mode: "preserve"
   loop: "{{ find_list_local_files.files }}"
 
-- name: Only pull images for {{ service }}
+- name: Only pull images for '{{ service }}'
   shell: |
     cd "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
     docker-compose pull
   when: docker_compose_run_only_pull_images|bool == true
 
-- name: Run service {{ service }} (Detached mode)
+
+- name: Run service '{{ service }}' (Detached mode)
   docker_compose:
     project_src: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
     state: present
@@ -84,11 +92,18 @@
     pull: no
   when: docker_compose_run_action == 'present'
 
-- name: Run service {{ service }} (Attached mode)
+- name: Run service '{{ service }}' (Attached mode)
   shell: |
     cd "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
     docker-compose up
   when: docker_compose_run_action == 'present-and-wait-until-end'
+
+
+- name: Wait {{ docker_compose_run_timeout_after.seconds }} seconds before release
+  pause:
+    seconds: "{{ docker_compose_run_timeout_after.seconds }}"
+    prompt: "{{ docker_compose_run_timeout_after.message }}"
+  when: docker_compose_run_timeout_after.seconds > 0
 
 
 
