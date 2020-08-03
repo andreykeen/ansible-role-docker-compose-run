@@ -20,6 +20,13 @@
   when: stat_local_service_dir.stat.exists == false
 
 
+# Если переменная 'docker_compose_run_local_services_dir' задана с начальными './', то удаляем их.
+- name: Remove begining './' from path '{{ docker_compose_run_local_services_dir }}' if it present
+  set_fact:
+    local_services_dir_trimmed: "{{ docker_compose_run_local_services_dir | regex_replace('^./', '') }}"
+
+
+
 # Список директорий используется для создания таких же директорий на целевом хосте
 - name: Get directory list for service '{{ service }}'
   find:
@@ -33,7 +40,34 @@
 
 # - name: Print 'find_list_local_dirs'
 #   debug:
-#     var: find_list_local_dirs.files
+#     msg: "{{ item.path }}"
+#   loop: "{{ find_list_local_dirs.files }}"
+
+- name: Create new list
+  set_fact:
+    list_service_sub_dirs: []
+
+- name: Parsing path find_list_local_dirs and save only sub-directories in service '{{ service }}'
+  set_fact:
+    list_service_sub_dirs: "{{ list_service_sub_dirs }} + [ \"{{ item.path | replace( local_services_dir_trimmed + '/', '' ) | replace( service + '/', '' ) }}\" ]"
+  loop: "{{ find_list_local_dirs.files }}"
+
+# - name: Print 'list_service_sub_dirs'
+#   debug:
+#     msg: "{{ item }}"
+#   loop: "{{ list_service_sub_dirs }}"
+
+- name: Create directories for service '{{ remote_service_dir_with_prefix }}'
+  file:
+    path: "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
+    state: directory
+
+- name: Create sub-directories for service '{{ remote_service_dir_with_prefix }}' if needed
+  file:
+    path: "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}/{{ item }}"
+    state: directory
+  loop: "{{ list_service_sub_dirs }}"
+
 
 
 # Список файлов используется для копирования на целевой хост с помощью модуля template
@@ -49,43 +83,44 @@
 
 # - name: Print 'find_list_local_files'
 #   debug:
-#     var: find_list_local_files.files
+#     msg: "{{ item.path }}"
+#   loop: "{{ find_list_local_files.files }}"
 
-# Если переменная 'docker_compose_run_local_services_dir' задана с начальными './', то удаляем их.
-- name: Remove begining './' from path '{{ docker_compose_run_local_services_dir }}' if it present
+- name: Create new list_service_files
   set_fact:
-    local_services_dir_trimmed: "{{ docker_compose_run_local_services_dir | regex_replace('^./', '') }}"
+    list_service_files: []
 
-- name: Create directories for service '{{ service }}'
-  file:
-    path: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
-    state: directory
+- name: Parsing path find_list_local_files for '{{ service }}'
+  set_fact:
+    list_service_files: "{{ list_service_files }} + [ \"{{ item.path | replace( local_services_dir_trimmed + '/', '' ) | replace( service + '/', '' ) }}\" ]"
+  loop: "{{ find_list_local_files.files }}"
 
-- name: Create sub-directories for service '{{ service }}' if needded
-  file:
-    path: "{{ docker_compose_run_remote_services_dir }}/{{ item.path | replace( local_services_dir_trimmed + '/' , '') }}"
-    state: directory
-  loop: "{{ find_list_local_dirs.files }}"
+# - name: Print 'list_service_files'
+#   debug:
+#     msg: "{{ item }}"
+#   loop: "{{ list_service_files }}"
+
 
 # TODO: Добавить простое копирование файлов, если не нужно выполнять подмену через Jinja2
 - name: "Copy template Jinja2 configuration for '{{ service }}' service"
   template:
-    src: "{{ item.path }}"
-    dest: "{{ docker_compose_run_remote_services_dir }}/{{ item.path | replace( local_services_dir_trimmed + '/', '') }}"
+    src: "{{ docker_compose_run_local_services_dir }}/{{ service }}/{{ item }}"
+    dest: "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}/{{ item }}"
     owner: "root"
     mode: "preserve"
-  loop: "{{ find_list_local_files.files }}"
+  loop: "{{ list_service_files }}"
 
-- name: Only pull images for '{{ service }}'
+
+
+- name: Only pull images for '{{ remote_service_dir_with_prefix }}'
   shell: |
-    cd "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
+    cd "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
     docker-compose pull
   when: docker_compose_run_only_pull_images|bool == true
 
-
-- name: Run service '{{ service }}' (Detached mode)
+- name: Run service '{{ remote_service_dir_with_prefix }}' (Detached mode)
   docker_compose:
-    project_src: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
+    project_src: "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
     state: present
     restarted: "{{ docker_compose_restarted }}"
     scale: "{{ docker_compose_service_scale }}"
@@ -94,7 +129,7 @@
 
 - name: Run service '{{ service }}' (Attached mode)
   shell: |
-    cd "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
+    cd "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
     docker-compose up
   when: docker_compose_run_action == 'present-and-wait-until-end'
 
@@ -104,15 +139,4 @@
     seconds: "{{ docker_compose_run_timeout_after.seconds }}"
     prompt: "{{ docker_compose_run_timeout_after.message }}"
   when: docker_compose_run_timeout_after.seconds > 0
-
-
-
-# - name: Run service '{{ service }}'
-#   docker_compose:
-#     project_src: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
-#     state: "{{ docker_compose_state }}"
-#     restarted: "{{ docker_compose_restarted }}"
-#     scale: "{{ docker_compose_service_scale }}"
-#     pull: "{{ docker_compose_pull }}"
-#   when: docker_compose_run_only_pull_images|bool != true
 

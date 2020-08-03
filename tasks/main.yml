@@ -1,11 +1,5 @@
 ---
 
-- name: "Create main directory for all docker-compose services"
-  file:
-    path: "{{ docker_compose_run_remote_services_dir }}"
-    state: directory
-    owner: "root"
-
 - name: Login to private {{ docker_compose_run_registry_hostname }} registry
   docker_login:
     registry: "{{ docker_compose_run_registry_hostname }}"

@@ -1,18 +1,18 @@
 ---
 
-- name: Checking if configuration for '{{ service }}' exist
+- name: Checking if configuration for '{{ remote_service_dir_with_prefix }}' exist
   stat:
-    path: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
+    path: "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
   register: stat_remote_service_dir
 
-- name: Absent docker-compose service '{{ service }}'
+- name: Absent docker-compose service '{{ remote_service_dir_with_prefix }}'
   docker_compose:
-    project_src: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
+    project_src: "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
     state: absent
   when: stat_remote_service_dir.stat.exists
 
-- name: Delete service directory '{{ docker_compose_run_remote_services_dir }}/{{ service }}'
+- name: Delete service directory '{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}'
   file:
-    path: "{{ docker_compose_run_remote_services_dir }}/{{ service }}"
+    path: "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
     state: absent
   when: stat_remote_service_dir.stat.exists and docker_compose_run_action == 'absent-and-delete'

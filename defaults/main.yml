@@ -10,6 +10,10 @@ docker_compose_run_local_services_dir: "{{ docker_compose_run_local_common_servi
 
 docker_compose_run_remote_services_dir: "/opt/services"
 
+# Этот префикс добавляется в название сервиса на таргет системе
+docker_compose_run_remote_service_prefix: ""
+
+
 # Что с сервисом должна сделать эта роль:
 # present *
 # present-and-wait-until-end *
