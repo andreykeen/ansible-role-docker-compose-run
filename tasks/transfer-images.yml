@@ -1,0 +1,111 @@
+---
+
+- name: Проверка входит ли локальный пользователь в группу docker.
+  shell: |
+    groups | grep -w "docker"
+  delegate_to: 127.0.0.1
+  become: no
+  register: docker_group
+  changed_when: false
+  failed_when: docker_group.stdout == ''
+
+- name: Получение списка имиджей из docker-compose.yml
+  shell: |
+    cat "{{ directory_with_docker_compose_file }}/docker-compose.yml" | grep -e '^[[:blank:]]*[^[:blank:]#;]' | grep -e ' image: ' | awk '{print $2}'
+  register: docker_compose_file_image_list
+
+
+# TODO: Сделать проверку и пересылать только отсутствующие на удалённом хосте имиджи.
+
+# - name: Вывод 'docker_compose_file_image_list'
+#   debug:
+#     var: docker_compose_file_image_list.stdout_lines
+
+# - name: Проверка, есть ли имидж на удалённом хосте
+#   docker_image_info:
+#     name: "{{ item }}"
+#   loop: "{{ docker_compose_file_image_list.stdout_lines }}"
+
+
+- name: Удаление ранее созданной директории "{{ docker_compose_run_transfer_images_local_path }}" на локальном хосте.
+  file:
+    path: "{{ docker_compose_run_transfer_images_local_path }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  become: no
+
+- name: Создание директории "{{ docker_compose_run_transfer_images_local_path }}/images" на локальном хосте для сохранения docker images в виде файлов.
+  file:
+    path: "{{ docker_compose_run_transfer_images_local_path }}/images"
+    state: directory
+    recurse: yes
+  delegate_to: 127.0.0.1
+  become: no
+
+- name: Загрузка имиджей из репозитория на локальный хост по списку из файла "{{ directory_with_docker_compose_file }}/docker-compose.yml".
+  shell: |
+    docker pull "{{ item }}"
+  loop: "{{ docker_compose_file_image_list.stdout_lines }}"
+  delegate_to: 127.0.0.1
+  become: no
+
+- name: Сохранение имиджей в виде файлов в директорию "{{ docker_compose_run_transfer_images_local_path }}/images" на локальном хосте.
+  shell: |
+    docker image save --output="{{ docker_compose_run_transfer_images_local_path }}/images/{{ item | replace("/", "_") | replace(":", "_") }}" "{{ item }}"
+  loop: "{{ docker_compose_file_image_list.stdout_lines }}"
+  delegate_to: 127.0.0.1
+  become: no
+
+- name: Сжатие директории "{{ docker_compose_run_transfer_images_local_path }}/images" в архив на локальном хосте.
+  archive:
+    path: "{{ docker_compose_run_transfer_images_local_path }}/images"
+    dest: "{{ docker_compose_run_transfer_images_local_path }}/images/images.tgz"
+  delegate_to: 127.0.0.1
+  become: no
+
+- name: Удаление ранее созданной директории "{{ docker_compose_run_transfer_images_remote_path }}" на удалённом хосте.
+  file:
+    path: "{{ docker_compose_run_transfer_images_remote_path }}"
+    state: absent
+
+- name: Создание директории "{{ docker_compose_run_transfer_images_remote_path }}" на удалённом хосте.
+  file:
+    path: "{{ docker_compose_run_transfer_images_remote_path }}"
+    state: directory
+    recurse: yes
+
+- name: Копирование архива с имиджами на удалённый хост.
+  copy:
+    src: "{{ docker_compose_run_transfer_images_local_path }}/images/images.tgz"
+    dest: "{{ docker_compose_run_transfer_images_remote_path }}/images.tgz"
+
+- name: Распаковка архива "{{ docker_compose_run_transfer_images_remote_path }}/images.tgz" на удалённом хосте.
+  unarchive:
+    src: "{{ docker_compose_run_transfer_images_remote_path }}/images.tgz"
+    dest: "{{ docker_compose_run_transfer_images_remote_path }}"
+    remote_src: yes
+
+- name: Получение списка файлов в директории "{{ docker_compose_run_transfer_images_remote_path }}/images" на удалённом хосте.
+  find:
+    path: "{{ docker_compose_run_transfer_images_remote_path }}/images"
+    file_type: file
+  register: find_list_remote_dirs
+
+- name: Загрузка из файлов имиджей в docker на удалённом хосте.
+  shell: |
+    docker image load --input="{{ item.path }}"
+  loop: "{{ find_list_remote_dirs.files }}"
+
+
+
+- name: Финальное удаление директории "{{ docker_compose_run_transfer_images_local_path }}" на локальном хосте.
+  file:
+    path: "{{ docker_compose_run_transfer_images_local_path }}"
+    state: absent
+  delegate_to: 127.0.0.1
+  become: no
+
+- name: Финальное удаление директории "{{ docker_compose_run_transfer_images_remote_path }}" на удалённом хосте.
+  file:
+    path: "{{ docker_compose_run_transfer_images_remote_path }}"
+    state: absent

@@ -112,6 +112,19 @@
 
 
 
+# Блок для передачи docker images с локального хоста на удалённый.
+# Если на локальном хосте имиджа нет, то он загружается из репозитория.
+# Имиджы выгружаются в файлы, архивируются и копируются на удалённый хост.
+# После выполнения все временные файли и директории удаляются.
+- name: Set variable 'directory_with_docker_compose_file' to "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
+  set_fact:
+    directory_with_docker_compose_file: "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
+
+- include_tasks: transfer-images.yml
+  when: docker_compose_run_transfer_images|bool == true
+
+
+
 - name: Only pull images for '{{ remote_service_dir_with_prefix }}'
   shell: |
     cd "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
@@ -132,6 +145,7 @@
     cd "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
     docker-compose up
   when: docker_compose_run_action == 'present-and-wait-until-end'
+
 
 
 - name: Wait {{ docker_compose_run_timeout_after.seconds }} seconds before release
