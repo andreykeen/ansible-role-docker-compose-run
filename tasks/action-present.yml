@@ -116,13 +116,28 @@
 # Если на локальном хосте имиджа нет, то он загружается из репозитория.
 # Имиджы выгружаются в файлы, архивируются и копируются на удалённый хост.
 # После выполнения все временные файли и директории удаляются.
-- name: Set variable 'directory_with_docker_compose_file' to "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
-  set_fact:
-    directory_with_docker_compose_file: "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
 
-- include_tasks: transfer-images.yml
+- name: Block for image transfer
+  block:
+
+    - name: Set variable 'directory_with_docker_compose_file' to "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
+      set_fact:
+        directory_with_docker_compose_file: "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
+
+    - name: Получение списка имиджей из docker-compose.yml
+      shell: |
+        cat "{{ directory_with_docker_compose_file }}/docker-compose.yml" | grep -e '^[[:blank:]]*[^[:blank:]#;]' | grep -e ' image: ' | awk '{print $2}'
+      register: docker_compose_file_image_list
+
+    - name: Run image transfer role
+      include_role:
+        name: image-transfer
+      vars:
+        image_transfer_list: "{{ docker_compose_file_image_list.stdout_lines }}"
+        image_transfer_local_path: "{{ docker_compose_run_transfer_images_local_path }}"
+        image_transfer_remote_path: "{{ docker_compose_run_transfer_images_remote_path }}"
+
   when: docker_compose_run_transfer_images|bool == true
-
 
 
 - name: Only pull images for '{{ remote_service_dir_with_prefix }}'

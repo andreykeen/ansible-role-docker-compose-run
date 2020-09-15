@@ -71,5 +71,5 @@ docker_compose_run_timeout_after:
 # Передавать или нет docker images с локального хоста на удалённый.
 # Позволяет отказаться от использования доступа удалённого хоста к офисному docker registry.
 docker_compose_run_transfer_images: false
-docker_compose_run_transfer_images_local_path: "/var/tmp/transfer-images"
-docker_compose_run_transfer_images_remote_path: "{{ docker_compose_run_transfer_images_local_path }}"
+docker_compose_run_transfer_images_local_path: "/var/tmp/image-transfer-local"
+docker_compose_run_transfer_images_remote_path: "/var/tmp/image-transfer-remote"
