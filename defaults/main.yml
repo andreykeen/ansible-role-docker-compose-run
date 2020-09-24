@@ -26,7 +26,7 @@ docker_compose_run_action: present
 
 
 # docker_compose_run_only_pull_images: true|false
-docker_compose_run_only_pull_images: false
+# docker_compose_run_only_pull_images: false
 
 # docker_compose_restarted: no|yes
 docker_compose_restarted: no
