@@ -146,13 +146,10 @@
     docker-compose pull
   when: docker_compose_run_only_pull_images|bool == true
 
-- name: Run service '{{ remote_service_dir_with_prefix }}' (Detached mode)
-  docker_compose:
-    project_src: "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
-    state: present
-    restarted: "{{ docker_compose_restarted }}"
-    scale: "{{ docker_compose_service_scale }}"
-    pull: no
+- name: Run service '{{ service }}' (Detached mode)
+  shell: |
+    cd "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
+    docker-compose up -d
   when: docker_compose_run_action == 'present'
 
 - name: Run service '{{ service }}' (Attached mode)

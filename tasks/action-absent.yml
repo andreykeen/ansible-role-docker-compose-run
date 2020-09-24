@@ -6,9 +6,9 @@
   register: stat_remote_service_dir
 
 - name: Absent docker-compose service '{{ remote_service_dir_with_prefix }}'
-  docker_compose:
-    project_src: "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
-    state: absent
+  shell: |
+    cd "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
+    docker-compose down
   when: stat_remote_service_dir.stat.exists
 
 - name: Delete service directory '{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}'
