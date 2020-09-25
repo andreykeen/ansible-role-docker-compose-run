@@ -134,8 +134,6 @@
         name: image-transfer
       vars:
         image_transfer_list: "{{ docker_compose_file_images_list.stdout_lines }}"
-        image_transfer_local_path: "{{ docker_compose_run_transfer_images_local_path }}"
-        image_transfer_remote_path: "{{ docker_compose_run_transfer_images_remote_path }}"
 
   when: docker_compose_run_transfer_images|bool == true
 
