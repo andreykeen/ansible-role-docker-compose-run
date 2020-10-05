@@ -71,3 +71,6 @@ docker_compose_run_timeout_after:
 # Передавать или нет docker images с локального хоста на удалённый.
 # Позволяет отказаться от использования доступа удалённого хоста к офисному docker registry.
 docker_compose_run_transfer_images: false
+
+# Принудительная перезапись файла passwords.env.
+docker_compose_run_rewrite_passwords_file: no

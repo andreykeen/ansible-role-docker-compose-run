@@ -95,12 +95,22 @@
     list_service_files: "{{ list_service_files }} + [ \"{{ item.path | replace( local_services_dir_trimmed + '/', '' ) | replace( service + '/', '' ) }}\" ]"
   loop: "{{ find_list_local_files.files }}"
 
-# - name: Print 'list_service_files'
-#   debug:
-#     msg: "{{ item }}"
-#   loop: "{{ list_service_files }}"
+- name: Print 'list_service_files'
+  debug:
+    msg: "{{ item }}"
+  loop: "{{ list_service_files }}"
 
 
+### Исключение файла passwords.env из списка файлов, копируемых по умолчанию
+- set_fact:
+    passwords_env_file:
+      - passwords.env
+
+- set_fact:
+    list_service_files: "{{ list_service_files | difference(passwords_env_file) }}"
+###
+
+### Копируются все файлы, кроме passwords.env
 - name: "Copy template Jinja2 configuration for '{{ service }}' service"
   template:
     src: "{{ docker_compose_run_local_services_dir }}/{{ service }}/{{ item }}"
@@ -109,6 +119,14 @@
     mode: "preserve"
   loop: "{{ list_service_files }}"
 
+### Файл passwords.env копируется только если отсутствует на целевом хосте
+- name: "Copy template Jinja2 'passwords.env' file for '{{ service }}' service"
+  template:
+    src: "{{ docker_compose_run_local_services_dir }}/{{ service }}/passwords.env"
+    dest: "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}/passwords.env"
+    owner: "root"
+    mode: "preserve"
+    force: "{{ docker_compose_run_rewrite_passwords_file }}"
 
 
 # Блок для передачи docker images с локального хоста на удалённый.
