@@ -101,7 +101,6 @@
 #   loop: "{{ list_service_files }}"
 
 
-# TODO: Добавить простое копирование файлов, если не нужно выполнять подмену через Jinja2
 - name: "Copy template Jinja2 configuration for '{{ service }}' service"
   template:
     src: "{{ docker_compose_run_local_services_dir }}/{{ service }}/{{ item }}"
@@ -128,6 +127,7 @@
       shell: |
         cat "{{ directory_with_docker_compose_file }}/docker-compose.yml" | grep -e '^[[:blank:]]*[^[:blank:]#;]' | grep -e ' image: ' | awk '{print $2}'
       register: docker_compose_file_images_list
+      changed_when: false
 
     - name: Run image transfer role
       include_role:
@@ -137,12 +137,6 @@
 
   when: docker_compose_run_transfer_images|bool == true
 
-# Вероятно, это больше не нужно
-# - name: Only pull images for '{{ remote_service_dir_with_prefix }}'
-#   shell: |
-#     cd "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
-#     docker-compose pull
-#   when: docker_compose_run_only_pull_images|bool == true
 
 - name: Run service '{{ service }}' (Detached mode)
   shell: |
@@ -155,8 +149,6 @@
     cd "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
     docker-compose up
   when: docker_compose_run_action == 'present-and-wait-until-end'
-
-
 
 - name: Wait {{ docker_compose_run_timeout_after.seconds }} seconds before release
   pause:
