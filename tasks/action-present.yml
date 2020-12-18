@@ -125,7 +125,7 @@
 
     - name: Получение списка имиджей из docker-compose.yml
       shell: |
-        cat "{{ directory_with_docker_compose_file }}/docker-compose.yml" | grep -e '^[[:blank:]]*[^[:blank:]#;]' | grep -e ' image: ' | awk '{print $2} | uniq'
+        cat "{{ directory_with_docker_compose_file }}/docker-compose.yml" | grep -e '^[[:blank:]]*[^[:blank:]#;]' | grep -e ' image: ' | awk '{print $2}' | uniq
       register: docker_compose_file_images_list
       changed_when: false
 
