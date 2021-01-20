@@ -24,4 +24,7 @@
   when: docker_compose_run_action == 'absent' or docker_compose_run_action == 'absent-and-delete'
 
 - include_tasks: action-present.yml
-  when: docker_compose_run_action == 'present' or docker_compose_run_action == 'present-and-wait-until-end' or docker_compose_run_action == 'copy' or docker_compose_run_action == 'pull'
+  when: docker_compose_run_action == 'present' or
+        docker_compose_run_action == 'present-and-wait-until-end' or
+        docker_compose_run_action == 'copy' or
+        docker_compose_run_action == 'pull'

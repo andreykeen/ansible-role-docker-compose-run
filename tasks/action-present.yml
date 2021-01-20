@@ -125,7 +125,7 @@
 
     - name: Получение списка имиджей из docker-compose.yml
       shell: |
-        cat "{{ directory_with_docker_compose_file }}/docker-compose.yml" | grep -e '^[[:blank:]]*[^[:blank:]#;]' | grep -e ' image: ' | awk '{print $2}'
+        cat "{{ directory_with_docker_compose_file }}/docker-compose.yml" | grep -e '^[[:blank:]]*[^[:blank:]#;]' | grep -e ' image: ' | awk '{print $2}' | uniq
       register: docker_compose_file_images_list
       changed_when: false
 
@@ -135,7 +135,11 @@
       vars:
         image_transfer_list: "{{ docker_compose_file_images_list.stdout_lines }}"
 
-  when: docker_compose_run_transfer_images|bool == true
+  when:
+    - docker_compose_run_transfer_images|bool == true
+    - docker_compose_run_action == 'present' or
+      docker_compose_run_action == 'present-and-wait-until-end' or
+      docker_compose_run_action == 'pull'
 
 - name: Pull docker image for service '{{ service }}'
   shell: |
@@ -160,4 +164,3 @@
     seconds: "{{ docker_compose_run_timeout_after.seconds }}"
     prompt: "{{ docker_compose_run_timeout_after.message }}"
   when: docker_compose_run_timeout_after.seconds > 0
-
