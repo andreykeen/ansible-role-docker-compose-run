@@ -145,7 +145,8 @@
   shell: |
     cd "{{ remote_services_dir_with_prefix }}/{{ remote_service_dir_with_prefix }}"
     docker-compose pull
-  when: docker_compose_run_action == 'pull'
+  when: docker_compose_run_action == 'pull' or
+        docker_compose_run_action == 'present'
 
 - name: Run service '{{ service }}' (Detached mode)
   shell: |
