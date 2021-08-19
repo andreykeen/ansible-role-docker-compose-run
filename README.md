@@ -1,31 +1,105 @@
-Role Name
+Ansible role: docker-compose-run
 =========
 
-A brief description of the role goes here.
+Запускает сервис, описанный в docker-compose.yaml
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+Требуется Docker и docker-compose на целевых хостах
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+Список сервисов для запуска. Каждый сервис называется как каталог, в котором находится файл docker-compose.yaml:
+
+    docker_compose_run_services_list: ""
+
+
+Каталог на локальном хосте, в котором находятся каталоги с сервисами для запуска:
+
+    docker_compose_run_local_services_dir: ""
+
+Каталог на удалённом хосте, в котором находятся каталоги с сервисами для запуска:
+
+    docker_compose_run_remote_services_dir: "/opt/services"
+
+Префикс добавляется в название сервиса на удалённом хосте:
+
+    docker_compose_run_remote_service_prefix: ""
+
+
+Что с сервисом должна сделать эта роль.
+
+    docker_compose_run_action: present
+
+Возможные значения:
+
+    present - скопировать каталог-сервис, загрузить docker images, запустить сервис в бэкграунде. Выполняется docker-compose up -d
+
+    present-and-wait-until-end - тоже, что и present только сервис запускается не в бэкграунде. Выполняется docker-compose up
+
+    absent - остановить и удалить контейнер. Выполняется docker-compose down
+
+    absent-and-delete - тоже, что и absent плюс удаление каталога с сервисом
+
+    copy - каталог с сервисом только копируется на удалённый хост без запуска
+
+    pull - тоже, что и copy плюс выполняется загрузка docker images
+
+
+Переменные docker_compose_run_registry_* используются для авторизации в приватном docker registry:
+
+    docker_compose_run_registry_hostname: ""
+    docker_compose_run_registry_username: ""
+    docker_compose_run_registry_password: ""
+    docker_compose_run_registry_login_befor: no
+    docker_compose_run_registry_logout_after: no
+
+
+Пауза в секундах перед выполнением роли:
+```
+docker_compose_run_timeout_befor:
+  seconds: 0
+  message: "Wait a few seconds"
+```
+
+Пауза в секундах после выполнения роли:
+```
+docker_compose_run_timeout_after:
+  seconds: 0
+  message: "Wait a few seconds"
+```
+
+Передавать или нет docker images с локального хоста на удалённый. Позволяет отказаться от авторизации в приватном docker registry на удалённом хосте. Используется внешняя роль
+image-transfer:
+
+    docker_compose_run_transfer_images: false
+
+
+
 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+Ansible role: image-transfer
 
 Example Playbook
 ----------------
+```yaml
+- hosts:
+    - host01
+  gather_facts: true
+  strategy: linear
+  become: yes
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
-
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+  roles:
+    - role: docker-compose-run
+      docker_compose_run_local_common_services_dir: "./services"
+      docker_compose_run_action: present
+      docker_compose_run_services_list:
+        - redis
+```
 
 License
 -------
@@ -35,4 +109,4 @@ BSD
 Author Information
 ------------------
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+This role was created in 2020 by Andrey Vladimirskiy
